@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOLFLIX Homework | Project Hail Mary</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        netflixRed: '#E50914',
+                        sciBlue: '#00d2ff',
+                        sciDarkBlue: '#004488',
+                        sciOrange: '#ff9f1c',
+                        surface: '#181818',
+                        success: '#2b9348'
+                    },
+                    fontFamily: {
+                        bebas: ['"Bebas Neue"', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
+                        mono: ['"Space Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* FIXED VIEWPORT - STRICTLY NO BODY SCROLLING */
+        body {
+            background-color: #050a15;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Dynamic Background System */
+        #dynamic-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80');
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            opacity: 0.15; z-index: 0; pointer-events: none; filter: contrast(1.2) brightness(0.7) hue-rotate(180deg);
+        }
+        #bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, #050a15 100%),
+                        linear-gradient(to top, #050a15 0%, rgba(5,10,21,0.6) 50%, #050a15 100%);
+            z-index: 1; pointer-events: none;
+        }
+
+        /* Fixed Step Management */
+        main {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .step-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none; opacity: 0;
+            flex-direction: column; align-items: center; justify-content: center;
+            padding: 1.5rem; z-index: 10;
+        }
+        .step-container.active {
+            display: flex; opacity: 1; animation: focusIn 0.5s ease-out forwards;
+        }
+        @keyframes focusIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); filter: blur(5px); }
+            to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(5, 15, 30, 0.85);
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(0, 210, 255, 0.15);
+            max-width: 900px; width: 100%;
+            max-height: 80vh; 
+            overflow-y: auto; 
+            padding: 2rem;
+            position: relative;
+        }
+        @media (min-width: 768px) { .glass-panel { padding: 3rem; } }
+        
+        .glass-panel::-webkit-scrollbar { width: 8px; }
+        .glass-panel::-webkit-scrollbar-track { background: transparent; }
+        .glass-panel::-webkit-scrollbar-thumb { background: rgba(0, 210, 255, 0.5); border-radius: 10px; }
+
+        .netflix-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 3px; }
+        .sci-gradient {
+            background: linear-gradient(90deg, #00d2ff, #ff9f1c);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+
+        /* Capsules */
+        .capsule {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px;
+            background: rgba(0, 210, 255, 0.1); border: 1px solid #00d2ff; border-radius: 500px;
+            font-size: 0.9rem; font-family: 'Space Mono', monospace; letter-spacing: 0.1em; color: #FFF;
+            text-transform: uppercase;
+        }
+
+        /* Buttons & Interactive */
+        .btn-netflix {
+            background-color: #00d2ff; color: #000; font-weight: 800;
+            padding: 14px 30px; border-radius: 6px; transition: all 0.3s; 
+            text-transform: uppercase; letter-spacing: 1px; font-size: 1.1rem; border: none; cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 210, 255, 0.3);
+        }
+        .btn-netflix:hover { background-color: #00a8e8; transform: scale(1.05); }
+        .btn-netflix:disabled { background-color: #333; color: #666; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Quiz Options */
+        .quiz-option {
+            background: rgba(10, 20, 40, 0.8); border: 2px solid #004488; color: #FFF;
+            padding: 15px 20px; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+            font-size: 1.2rem; font-weight: 500; display: flex; align-items: center; gap: 12px;
+            font-family: 'Space Mono', monospace;
+        }
+        .quiz-option:hover { border-color: #00d2ff; background: rgba(0, 210, 255, 0.1); transform: translateX(5px); }
+        .quiz-option.correct { border-color: #2b9348; background: rgba(43, 147, 72, 0.2); }
+        .quiz-option.incorrect { border-color: #ff9f1c; background: rgba(255, 159, 28, 0.2); animation: shake 0.4s; }
+
+        /* Sentence Builder */
+        .sb-word {
+            background: #FFF; color: #050a15; font-weight: 800; padding: 10px 18px; border-radius: 6px;
+            cursor: pointer; user-select: none; transition: all 0.2s; font-size: 1.1rem;
+        }
+        .sb-word:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 210, 255, 0.4); }
+        .sb-dropzone { min-height: 80px; border: 2px dashed rgba(255, 255, 255, 0.3); border-radius: 12px; padding: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; transition: all 0.3s; background: rgba(0,0,0,0.2); }
+        .sb-dropzone.correct { border-color: #2b9348; background: rgba(43, 147, 72, 0.1); }
+        .sb-dropzone.incorrect { border-color: #ff9f1c; background: rgba(255, 159, 28, 0.1); animation: shake 0.4s; }
+
+        /* Error Detection */
+        .error-text span { cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s; font-weight: bold; }
+        .error-text span:hover { background: rgba(0, 210, 255, 0.15); }
+        .error-text span.wrong-clicked { color: #ff9f1c; background: rgba(255, 159, 28, 0.2); }
+        .error-text span.correct-clicked { animation: shake 0.4s; color: #444; }
+
+        /* Chat Scenarios */
+        .chat-bubble { max-width: 85%; padding: 12px 18px; border-radius: 18px; font-size: 1.1rem; line-height: 1.4; margin-bottom: 10px; font-family: 'Space Mono', monospace;}
+        .chat-left { background: rgba(0, 68, 136, 0.5); align-self: flex-start; border-bottom-left-radius: 4px; border-left: 3px solid #00d2ff;}
+        .chat-right { background: rgba(255, 159, 28, 0.2); color: white; align-self: flex-end; border-bottom-right-radius: 4px; border-right: 3px solid #ff9f1c;}
+
+        .glitch { animation: glitch 3s linear infinite; }
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    </style>
+</head>
+<body class="text-base md:text-lg">
+
+    <div id="dynamic-bg"></div>
+    <div id="bg-overlay"></div>
+
+    <header class="h-20 flex items-center justify-between px-6 shrink-0 relative z-20 bg-gradient-to-b from-[#050a15]/90 to-transparent">
+        <div class="flex items-center gap-4">
+            <span class="netflix-title text-3xl text-sciBlue tracking-widest font-bold">WOLFLIX</span>
+            <span class="px-2 py-1 border border-sciBlue text-sciBlue rounded text-[10px] tracking-widest uppercase font-bold mt-1">Homework Edition</span>
+        </div>
+        <div class="flex-1 max-w-sm mx-8 hidden sm:block">
+            <div class="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                <div id="progress-bar" class="h-full bg-sciBlue transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+        <button onclick="toggleFullscreen()" class="text-gray-300 hover:text-white transition-colors">
+            <i data-lucide="maximize" class="w-6 h-6"></i>
+        </button>
+    </header>
+
+    <main id="lesson-container">
+
+        <!-- STEP 1: COVER -->
+        <section class="step-container active">
+            <div class="text-center">
+                <div class="flex flex-wrap justify-center gap-3 mb-6">
+                    <span class="capsule">Level A2</span>
+                    <span class="capsule" style="border-color:#ff9f1c; background:rgba(255,159,28,0.1);">Have To / Must</span>
+                </div>
+                <h1 class="netflix-title text-7xl md:text-9xl sci-gradient drop-shadow-2xl mb-4 leading-none glitch">
+                    PROJECT HAIL MARY
+                </h1>
+                <p class="text-xl md:text-3xl text-gray-300 font-light tracking-[0.2em] uppercase mb-10 font-mono">
+                    System Reboot: Homework
+                </p>
+                <button onclick="nextStep()" class="btn-netflix">Initialize Log</button>
+            </div>
+        </section>
+
+        <!-- STEP 2: BRIEFING -->
+        <section class="step-container">
+            <div class="glass-panel">
+                <h2 class="netflix-title text-5xl text-white mb-6">Mission Briefing</h2>
+                <p class="text-xl text-gray-300 leading-relaxed mb-8 font-mono">
+                    Ryland Grace needs your help to restore his memory files. Complete the grammar and vocabulary diagnostics to repair the ship's database.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono">
+                    <div class="bg-black/50 p-6 rounded-xl border-l-4 border-sciBlue">
+                        <p class="text-white font-bold mb-2 uppercase tracking-wider">Targets</p>
+                        <ul class="text-gray-400 space-y-2 text-sm md:text-base">
+                            <li>• Have to (Necessity)</li>
+                            <li>• Don't have to (No obligation)</li>
+                            <li>• Must (Strong Rule)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-black/50 p-6 rounded-xl border-l-4 border-sciOrange">
+                        <p class="text-white font-bold mb-2 uppercase tracking-wider">Requirements</p>
+                        <ul class="text-gray-400 space-y-2 text-sm md:text-base">
+                            <li>• Complete 8 tasks</li>
+                            <li>• 100% Accuracy</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: VOCAB QUIZ -->
+        <section class="step-container">
+            <div class="glass-panel">
+                <h2 class="netflix-title text-4xl text-sciBlue mb-6">Task 1: Memory Recovery</h2>
+                <p class="text-xl text-gray-200 mb-8 font-mono">Choose the correct word to complete the mission log.</p>
+                
+                <p class="text-2xl text-white font-light leading-relaxed mb-8 text-center italic">
+                    "I am the only person alive on this <span class="text-sciBlue font-bold border-b-2 border-sciBlue pb-1">______</span>. I have to find a way to survive."
+                </p>
+
+                <div class="flex flex-col gap-4" id="quiz-1">
+                    <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz-1')">
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-400 flex items-center justify-center shrink-0">A</div>
+                        memory
+                    </div>
+                    <div class="quiz-option" onclick="checkQuiz(this, true, 'quiz-1')">
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-400 flex items-center justify-center shrink-0">B</div>
+                        spaceship
+                    </div>
+                    <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz-1')">
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-400 flex items-center justify-center shrink-0">C</div>
+                        threat
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 4: GRAMMAR QUIZ -->
+        <section class="step-container">
+            <div class="glass-panel">
+                <h2 class="netflix-title text-4xl text-sciOrange mb-6">Task 2: Logic Systems</h2>
+                <p class="text-xl text-gray-200 mb-8 font-mono">The computer is flying the ship automatically. Select the correct logic parameter.</p>
+                
+                <p class="text-2xl text-white font-light leading-relaxed mb-8 text-center italic">
+                    "The ship's autopilot is perfectly fine. You <span class="text-sciOrange font-bold border-b-2 border-sciOrange pb-1">______</span> drive."
+                </p>
+
+                <div class="flex flex-col gap-4" id="quiz-2">
+                    <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz-2')">
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-400 flex items-center justify-center shrink-0">A</div>
+                        have to
+                    </div>
+                    <div class="quiz-option" onclick="checkQuiz(this, true, 'quiz-2')">
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-400 flex items-center justify-center shrink-0">B</div>
+                        don't have to
+                    </div>
+                    <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz-2')">
+                        <div class="w-8 h-8 rounded-full border-2 border-gray-400 flex items-center justify-center shrink-0">C</div>
+                        must
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 5: ERROR DETECTION 1 -->
+        <section class="step-container">
+            <div class="glass-panel">
+                <div class="inline-flex items-center gap-2 text-netflixRed mb-2">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    <span class="font-bold tracking-widest text-sm uppercase">System Error</span>
+                </div>
+                <h2 class="netflix-title text-4xl text-white mb-6">Task 3: Find the Glitch</h2>
+                <p class="text-xl text-gray-200 mb-8 font-mono">Click the INCORRECT word in the sentence. Remember the rule for He/She/It.</p>
+                
+                <div class="text-3xl font-bold leading-loose error-text bg-black/40 p-8 rounded-xl border-l-4 border-netflixRed mb-6 text-center">
+                    "The commander says Ryland <span onclick="checkError(this, true, 'doesn\'t', 'error-feedback-1')" class="wrong-target">don't</span> <span onclick="checkError(this, false, '', 'error-feedback-1')">have</span> <span onclick="checkError(this, false, '', 'error-feedback-1')">to</span> <span onclick="checkError(this, false, '', 'error-feedback-1')">worry</span>."
+                </div>
+                <p id="error-feedback-1" class="text-center font-bold text-xl h-8 font-mono"></p>
+            </div>
+        </section>
+
+        <!-- STEP 6: ERROR DETECTION 2 -->
+        <section class="step-container">
+            <div class="glass-panel">
+                <div class="inline-flex items-center gap-2 text-netflixRed mb-2">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    <span class="font-bold tracking-widest text-sm uppercase">System Error</span>
+                </div>
+                <h2 class="netflix-title text-4xl text-white mb-6">Task 4: The Core Rule</h2>
+                <p class="text-xl text-gray-200 mb-8 font-mono">Find the glitch. Be careful: 'have to' changes depending on the subject.</p>
+                
+                <div class="text-3xl font-bold leading-loose error-text bg-black/40 p-8 rounded-xl border-l-4 border-netflixRed mb-6 text-center">
+                    "Ryland <span onclick="checkError(this, true, 'has', 'error-feedback-2')" class="wrong-target">have</span> <span onclick="checkError(this, false, '', 'error-feedback-2')">to</span> <span onclick="checkError(this, false, '', 'error-feedback-2')">find</span> the alien <span onclick="checkError(this, false, '', 'error-feedback-2')">microbe</span>."
+                </div>
+                <p id="error-feedback-2" class="text-center font-bold text-xl h-8 font-mono"></p>
+            </div>
+        </section>
+
+        <!-- STEP 7: SENTENCE BUILDER 1 -->
+        <section class="step-container">
+            <div class="glass-panel">
+                <h2 class="netflix-title text-4xl text-sciBlue mb-6">Task 5: Rebuild the Code</h2>
+                <p class="text-xl text-gray-200 mb-8 font-mono">Unscramble the words to build the primary objective.</p>
+                
+                <div id="dropzone-1" class="sb-dropzone mb-8"></div>
+                
+                <div id="wordbank-1" class="flex flex-wrap justify-center gap-4 mb-8">
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">save</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">have</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">Earth</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">I</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">the</div>
+                    <div class="sb-word" onclick="moveWord(this, 'dropzone-1', 'wordbank-1')">to</div>
+                </div>
+
+                <button onclick="checkSentenceBuilder('dropzone-1', ['I', 'have', 'to', 'save', 'the', 'Earth'])" class="btn-netflix w-full">Verify Syntax</button>
+                <p id="sb-feedback-1" class="text-center mt-6 hidden font-bold text-xl font-mono"></p>
+            </div>
+        </section>
+
+        <!-- STEP 8: CHAT CHALLENGE -->
+        <section class="step-container">
+            <div class="glass-panel">
+                <h2 class="netflix-title text-4xl text-white mb-6">Task 6: Comm Link Repair</h2>
+                <p class="text-xl text-gray-200 mb-6 font-mono">Earth Command is sending a message. Choose the correct grammar to reply.</p>
+                
+                <div class="flex flex-col gap-2 mb-8 w-full max-w-2xl mx-auto">
+                    <div class="chat-bubble chat-left">
+                        Command: The engines are broken. Do I have to fix them manually?
+                    </div>
+                    <div class="chat-bubble chat-right">
+                        Ryland: Yes, you _____. There is no other way.
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4 max-w-2xl mx-auto" id="quiz-3">
+                    <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz-3')">A) must to</div>
+                    <div class="quiz-option" onclick="checkQuiz(this, true, 'quiz-3')">B) have to</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 9: OPEN WRITING -->
+        <section class="step-container">
+            <div class="glass-panel">
+                <div class="inline-flex items-center gap-2 text-sciBlue mb-2">
+                    <i data-lucide="edit-3" class="w-6 h-6"></i>
+                    <span class="font-bold tracking-widest text-sm uppercase">Manual Override</span>
+                </div>
+                <h2 class="netflix-title text-4xl text-white mb-6">Task 7: Personal Log</h2>
+                <p class="text-xl text-gray-200 mb-6 font-mono">Write your own ship log. Tell the computer <strong class="text-sciBlue">two things you have to do</strong> tomorrow, and <strong class="text-sciOrange">one thing you don't have to do</strong>.</p>
+                
+                <textarea id="writing" class="w-full h-40 bg-black/60 border-2 border-gray-700 rounded-xl p-6 text-lg text-white outline-none focus:border-sciBlue transition-all font-mono" placeholder="Example: Tomorrow, I have to study English. I don't have to wake up early..."></textarea>
+                
+                <button onclick="submitHW()" id="save-btn" class="btn-netflix w-full mt-6">Submit Log</button>
+                <p id="save-feedback" class="text-center mt-4 hidden font-bold text-xl text-success font-mono">Log Saved Successfully!</p>
+            </div>
+        </section>
+
+        <!-- STEP 10: COMPLETE -->
+        <section class="step-container">
+            <div class="text-center bg-black/50 p-12 rounded-3xl border border-gray-800 backdrop-blur-md">
+                <div class="w-24 h-24 bg-success rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(43,147,72,0.5)]">
+                    <i data-lucide="check" class="w-16 h-16 text-white"></i>
+                </div>
+                <h2 class="netflix-title text-[5rem] md:text-[7rem] text-white leading-none mb-4">Systems Restored</h2>
+                <p class="text-xl md:text-2xl text-sciBlue mb-12 uppercase tracking-widest font-bold font-mono">Homework 100% Completed.</p>
+                <button onclick="window.close()" class="btn-netflix bg-sciBlue text-black hover:bg-blue-400">Exit Interface</button>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="h-20 bg-black/95 border-t border-gray-800 flex justify-between items-center px-8 shrink-0 relative z-20">
+        <button id="btn-prev" onclick="prevStep()" class="px-6 py-3 border-2 border-gray-600 text-white hover:border-white rounded-lg uppercase font-bold text-sm tracking-widest disabled:opacity-20 font-mono transition-colors">
+            Back
+        </button>
+        <div class="text-sm text-gray-400 font-bold tracking-widest uppercase hidden sm:block font-mono">
+            Task <span id="current-step-display" class="text-white mx-1">1</span> / 10
+        </div>
+        <button id="btn-next" onclick="nextStep()" class="px-8 py-3 bg-sciBlue text-black hover:bg-blue-400 rounded-lg uppercase font-bold text-sm tracking-widest disabled:opacity-20 font-mono transition-colors shadow-[0_0_15px_rgba(0,210,255,0.3)]">
+            Next
+        </button>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        let currentStep = 0;
+        const steps = document.querySelectorAll('.step-container');
+        const progressBar = document.getElementById('progress-bar');
+        const stepDisplay = document.getElementById('current-step-display');
+
+        function updateUI() {
+            steps.forEach((s, i) => s.classList.toggle('active', i === currentStep));
+            progressBar.style.width = `${(currentStep / (steps.length - 1)) * 100}%`;
+            stepDisplay.innerText = currentStep + 1;
+            document.getElementById('btn-prev').disabled = currentStep === 0;
+            document.getElementById('btn-next').disabled = currentStep === steps.length - 1;
+        }
+
+        function nextStep() { if(currentStep < steps.length - 1) { currentStep++; updateUI(); } }
+        function prevStep() { if(currentStep > 0) { currentStep--; updateUI(); } }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        }
+
+        function checkQuiz(el, isCorrect, quizId) {
+            const container = document.getElementById(quizId);
+            container.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.classList.remove('correct', 'incorrect');
+            });
+            el.classList.add(isCorrect ? 'correct' : 'incorrect');
+        }
+
+        function checkError(el, isError, correctWord, feedbackId) {
+            el.parentElement.querySelectorAll('span').forEach(s => s.className = '');
+            const feedback = document.getElementById(feedbackId);
+            if(isError) {
+                el.classList.add('wrong-clicked');
+                el.innerText = correctWord;
+                feedback.innerText = "Glitch Fixed!";
+                feedback.style.color = "#2b9348";
+            } else {
+                el.classList.add('correct-clicked');
+                feedback.innerText = "Word is correct. Try again.";
+                feedback.style.color = "#ff9f1c";
+            }
+        }
+
+        function moveWord(el, dzId, wbId) {
+            const dz = document.getElementById(dzId);
+            const wb = document.getElementById(wbId);
+            dz.classList.remove('correct', 'incorrect');
+            if (el.parentElement.id === wbId) dz.appendChild(el);
+            else wb.appendChild(el);
+        }
+
+        function checkSentenceBuilder(dzId, correctArr) {
+            const dz = document.getElementById(dzId);
+            const words = Array.from(dz.children).map(c => c.innerText);
+            const feedback = document.getElementById('sb-feedback-1');
+            feedback.classList.remove('hidden');
+
+            if (words.length !== correctArr.length) {
+                dz.className = 'sb-dropzone incorrect mb-8';
+                feedback.innerText = "Use all blocks!";
+                feedback.style.color = "#ff9f1c";
+                return;
+            }
+
+            if (words.every((v, i) => v === correctArr[i])) {
+                dz.className = 'sb-dropzone correct mb-8';
+                feedback.innerText = "Syntax Accepted.";
+                feedback.style.color = "#2b9348";
+            } else {
+                dz.className = 'sb-dropzone incorrect mb-8';
+                feedback.innerText = "Syntax Error. Try again.";
+                feedback.style.color = "#ff9f1c";
+            }
+        }
+
+        function submitHW() {
+            const text = document.getElementById('writing').value;
+            if(text.trim().length > 15) {
+                const btn = document.getElementById('save-btn');
+                btn.innerHTML = 'Mission Log Saved';
+                btn.style.backgroundColor = '#2b9348';
+                btn.disabled = true;
+                document.getElementById('save-feedback').classList.remove('hidden');
+                setTimeout(() => nextStep(), 1500);
+            } else {
+                alert("Please write a complete log before submitting.");
+            }
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
